@@ -24,7 +24,7 @@ pinecone_api_key =config['pinecone']
 
 #Parsing Text
 #This can have an argument
-text_chunks=m.parseDocs()
+# text_chunks=m.parseDocs()
 
 #Setting up model
 print("Starting Model Setup:")
@@ -32,7 +32,7 @@ myModel=PineconeModelManager(pinecone_api_key, "us-east-1", "workshop")
 
 print("Upserting Model!")
 #TODO: UNHARDCODE REQUESTS
-myModel.upsert(myModel.embed_text(text_chunks),text_chunks,"requests")
+# myModel.upsert(myModel.embed_text(text_chunks),text_chunks,"requests")
 
 
 configure(api_key=gemini_api_key)
