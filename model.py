@@ -4,11 +4,24 @@ from pinecone import Pinecone, ServerlessSpec
 import fitz
 from google.generativeai import configure, GenerativeModel
 import json
+from PyPDF2 import PdfReader
 
 
 #insert API keys, configure DB
-gemini_api_key = "AIzaSyDWFPO-DTvW5aFU86g-ONoDXCwfaQjfnC0"
-pinecone_api_key = "pcsk_2ohyRG_NCsHTDdJGZqeuNpwWkNtRMvLQHZj9bZp9Uk4UifcysAaMT1sEF7zMNRkMyWztwF"
+
+
+def load_config(file_path="config.json"):
+    with open(file_path, "r") as file:
+        config = json.load(file)
+    return config
+
+# Read and display credentials
+config = load_config()
+
+gemini_api_key=config['gemini']
+pinecone_api_key =config['pinecone']
+
+
 pinecone_env = "us-east-1"  # Example: 'us-east-1'
 
 configure(api_key=gemini_api_key)
@@ -33,16 +46,14 @@ if index_name not in existing_indexes:
           region="us-east-1"
       )
   )
+index = pc.Index(index_name)
 
-
-  model = SentenceTransformer('all-MiniLM-L6-v2')
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
 def embed_text(text):
     embeddings = model.encode(text)  # The model expects a list of texts
     return embeddings
 
-
-from PyPDF2 import PdfReader
 
 def extract_text_from_pdf(pdf_file_path):
     # Extract text from the entire PDF document
@@ -83,7 +94,7 @@ def ingest_pdf(pdf_file_path, doc_id):
 
 
 # Ingest an uploaded PDF document:
-ingest_pdf("/content/Syllabus CMSC 421.pdf", "doc1") #doc1 is a sample identifier, you can make it anything
+# ingest_pdf("sample_data/CMSC226-32842 Syllabus Spring25.pdf", "doc1") #doc1 is a sample identifier, you can make it anything
 
 def retrieve_relevant_docs(query, top_k=5):
     query_embedding = embed_text([query]) #the function expects a list of vectors
@@ -101,6 +112,7 @@ gemini_model = GenerativeModel(model_name="gemini-2.0-flash")
 
 query = "Which rooms are does the professor hold office hours?" #user query
 retrieved_docs = retrieve_relevant_docs(query)
+print("DOCSS",retrieved_docs)
 
 
 def generate_answer(query, context):
@@ -118,4 +130,3 @@ print("\nRAG Answer:", answer1)
 
 print("\nNormal Answer:", answer2)
 
-index.delete(deleteAll=True)
