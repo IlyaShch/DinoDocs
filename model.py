@@ -23,7 +23,7 @@ def chunk_text(text):
     threshold=0.6,                               # Similarity threshold (0-1) or (1-100) or "auto"
     chunk_size=512,                              # Maximum tokens per chunk
     min_sentences=1                              # Initial sentences per chunk
-    )
+    ) 
     
     chunks = chunker.chunk(text)
     
@@ -47,6 +47,12 @@ def query(query: str, doc_model :PineconeModelManager, gemini_model : Generative
     retrieved_docs=doc_model.query(query)
     
     prompt1 = f"Use ONLY the context provided to answer the query. Context: {retrieved_docs}\n\nQuestion: {query}\n\nAnswer:"
+
+    print(" We retrieved thse docs\n")
+    print(retrieved_docs)
+
+    print(f"\n\nQuery was: ", query)
+
     response1 = gemini_model.generate_content(prompt1)
 
     return response1

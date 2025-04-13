@@ -72,15 +72,14 @@ async def serve_react():
 @app.post("/question-query/")
 async def custom_json_response(data: InputData):
     # You can build any custom response based on the input
-    responseStr = "Hello, Keiran! You're old."
     # sourceDocs = len(data.sourceDocs)
-    
+
+# We return query to frontend    
     response=m.query(data.query,myModel,gemini_model)
     # print("RESPONSE",response)
     custom_response = {
         "response": response.text,
-        # "number_of_docs": sourceDocs,
-        "you are": "smelly"
+
     }
 
     return custom_response
@@ -95,7 +94,6 @@ async def upload_pdf(file: UploadFile = File(...)):
     with open(f"UploadedData/uploaded_{file.filename}", "wb") as f:
         content = await file.read()
         f.write(content)
-
     
     text_chunks=m.parseDocs()
     myModel.upsert(myModel.embed_text(text_chunks),text_chunks,file.filename)

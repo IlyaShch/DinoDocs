@@ -53,14 +53,23 @@ class PineconeModelManager:
     def query(self, query, top_k: int = 5, namespace: Optional[str] = None) -> Dict:
         """Query the index with a vector."""
         # print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSHIIIITT",type(query))
-        query_embedding = self.embed_text([query]) #the function expects a list of vectors
-        query_embedding = query_embedding.tolist()  # Convert ndarray to list
+        #query_embedding = self.embed_text([query]) #the function expects a list of vectors
+        #query_embedding = query_embedding.tolist()  # Convert ndarray to list
 
-        # Query Pinecone for the top_k most relevant chunks
-        results = self.index.query(vector=query_embedding, top_k=top_k, include_metadata=True)
+        try:
+            query_embedding = self.embed_text([query])[0].tolist()
 
-        # Return the relevant text chunks
-        return [match["metadata"]["text"].replace("\n","") for match in results["matches"]] 
+            # Query Pinecone for the top_k most relevant chunks
+            results = self.index.query(vector=query_embedding, top_k=top_k, include_metadata=True)
+
+            #Testing what we have
+            print(f"Got {len(results['matches'])} matches for query: {query}")
+
+            # Return the relevant text chunks
+            return [match["metadata"]["text"].replace("\n","") for match in results["matches"]]
+        except Exception as e:
+            print("Exception during query")
+            return [] 
 
     def delete(self, ids: List[str], namespace: Optional[str] = None):
         """Delete vectors by ID."""
@@ -69,7 +78,7 @@ class PineconeModelManager:
     def embed_text(self, text):
         self.embeddings = self.model.encode(text)  # The model expects a list of texts
         return self.embeddings
-    
+      
     def describe_index_stats(self) -> Dict:
         """Get index statistics."""
         return self.index.describe_index_stats()
