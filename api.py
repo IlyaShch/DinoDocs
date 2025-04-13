@@ -11,6 +11,8 @@ import model as m
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
+namespace = ""
+
 ##########################SETUP AREA ###############################
 def load_config(file_path="config.json"):
     with open(file_path, "r") as file:
@@ -31,7 +33,7 @@ myModel=PineconeModelManager(pinecone_api_key, "us-east-1", "workshop")
 
 #myModel.upsert(myModel.embed_text(text_chunks),text_chunks)
 
-
+# Setting up Gemini
 configure(api_key=gemini_api_key)
 gemini_model = GenerativeModel(model_name="gemini-2.0-flash")
 
@@ -101,7 +103,8 @@ async def upload_pdf(file: UploadFile = File(...)):
         f.write(content)
     
     text_chunks=m.parseDocs(file_path)
-    myModel.upsert(myModel.embed_text(text_chunks),text_chunks)
+    myModel.upsert(myModel.embed_text(text_chunks),text_chunks, file.filename)
+    namespace = file.filename
 
 
     return {"filename": file.filename, "type": file.content_type}

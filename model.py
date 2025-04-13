@@ -4,6 +4,7 @@ from google.generativeai import configure, GenerativeModel
 from PyPDF2 import PdfReader
 from chonkie import SemanticChunker
 from modelManager import PineconeModelManager 
+from typing import Optional
 
 #Rip rip all the plaintext from the pdfile
 def extract_text_from_pdf(pdf_file_path):
@@ -43,8 +44,8 @@ def parseDocs(self, file_name: str ="sample_data/requests-readthedocs-io-en-late
     return text_chunks
     
 
-def query(query: str, doc_model :PineconeModelManager, gemini_model : GenerativeModel):
-    retrieved_docs=doc_model.query(query)
+def query(query: str, doc_model :PineconeModelManager, gemini_model : GenerativeModel, namespace: Optional[str] = None):
+    retrieved_docs=doc_model.query(query, namespace=namespace)
     print(query)
     prompt1 = f"Use ONLY the context provided to answer the query. Context: {retrieved_docs}\n\nQuestion: {query}\n\nAnswer:"
 

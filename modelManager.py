@@ -58,7 +58,7 @@ class PineconeModelManager:
             query_embedding = self.embed_text([query])[0].tolist()
 
             # Query Pinecone for the top_k most relevant chunks
-            results = self.index.query(vector=query_embedding, top_k=top_k,include_metadata=True)
+            results = self.index.query(vector=query_embedding, top_k=top_k,include_metadata=True,namespace=namespace)
 
             #Testing what we have
             print(f"Got {len(results['matches'])} matches for query: {query}")
