@@ -1,6 +1,8 @@
 #run with
 #python -m uvicorn api:app --reload
 import json
+from fastapi import FastAPI, File, UploadFile
+from fastapi.responses import JSONResponse
 from fastapi import FastAPI
 from pydantic import BaseModel
 from modelManager import PineconeModelManager 
@@ -17,6 +19,7 @@ gemini_api_key=config['gemini']
 pinecone_api_key =config['pinecone']
 
 #Parsing Text
+#This can have an argument
 text_chunks=m.parseDocs()
 
 #Setting up model
@@ -49,9 +52,9 @@ async def custom_json_response(data: InputData):
     # You can build any custom response based on the input
     responseStr = "Hello, Keiran! You're old."
     # sourceDocs = len(data.sourceDocs)
-
     
-    response=m.query(query,myModel,gemini_model)
+    
+    response=m.query(data["query"],myModel,gemini_model)
     
     custom_response = {
         "response": response,
@@ -62,3 +65,14 @@ async def custom_json_response(data: InputData):
     return custom_response
 
 
+@app.post("/upload-pdf/")
+async def upload_pdf(file: UploadFile = File(...)):
+    if file.content_type != "application/pdf":
+        return JSONResponse(status_code=400, content={"error": "Only PDF files are accepted."})
+    
+    # TODO: MAKE IT GO INTO THE FOLDER
+    with open(f"UploadedData/uploaded_{file.filename}", "wb") as f:
+        content = await file.read()
+        f.write(content)
+
+    return {"filename": file.filename, "type": file.content_type}
