@@ -9,6 +9,7 @@ from modelManager import PineconeModelManager
 from google.generativeai import configure, GenerativeModel
 import model as m
 from fastapi.middleware.cors import CORSMiddleware
+import os
 
 ##########################SETUP AREA ###############################
 def load_config(file_path="config.json"):
@@ -20,26 +21,24 @@ config = load_config()
 gemini_api_key=config['gemini']
 pinecone_api_key =config['pinecone']
 
-#TODO: When a PDF is uploaded, upsert it into the model. 
 
 #Parsing Text
 #This can have an argument
-text_chunks=m.parseDocs()
+#text_chunks=m.parseDocs()
 
 #Setting up model
 myModel=PineconeModelManager(pinecone_api_key, "us-east-1", "workshop") 
 
-#TODO: UNHARDCODE REQUESTS
-myModel.upsert(myModel.embed_text(text_chunks),text_chunks)
+#myModel.upsert(myModel.embed_text(text_chunks),text_chunks)
 
 
 configure(api_key=gemini_api_key)
 gemini_model = GenerativeModel(model_name="gemini-2.0-flash")
 
 #Example Query
-query = "How do I POST a request?" #user query
-response=m.query(query,myModel,gemini_model)
-print(response.text)
+#query = "How do I POST a request?" #user query
+#response=m.query(query,myModel,gemini_model)
+#print(response.text)
 
 app = FastAPI()
 
@@ -62,6 +61,7 @@ app.add_middleware(
 class InputData(BaseModel):
     query: str
 
+# Define
 @app.get("/")
 async def serve_react():
     return FileResponse("index.html")
@@ -88,12 +88,19 @@ async def upload_pdf(file: UploadFile = File(...)):
     if file.content_type != "application/pdf":
         return JSONResponse(status_code=400, content={"error": "Only PDF files are accepted."})
     
+    # Ensure directory exists
+    save_dir = "UploadedData"
+    os.makedirs(save_dir, exist_ok = True)
+
+    # Save the file
+    file_path = os.path.join(save_dir, f"uploaded_{file.filename}")
+    content = await file.read()
+
     # TODO: MAKE IT GO INTO THE FOLDER
-    with open(f"UploadedData/uploaded_{file.filename}", "wb") as f:
-        content = await file.read()
+    with open(file_path, "wb") as f:
         f.write(content)
     
-    text_chunks=m.parseDocs()
+    text_chunks=m.parseDocs(file_path)
     myModel.upsert(myModel.embed_text(text_chunks),text_chunks)
 
 

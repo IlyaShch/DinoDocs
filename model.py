@@ -33,7 +33,7 @@ def chunk_text(text):
     return chunkies
 
 
-def parseDocs(file_name: str ="sample_data/requests-readthedocs-io-en-latest.pdf",):
+def parseDocs(self, file_name: str ="sample_data/requests-readthedocs-io-en-latest.pdf",):
     print("Extracting Text .....")
     pdf_text = extract_text_from_pdf(file_name)
 
