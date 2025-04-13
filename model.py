@@ -45,7 +45,7 @@ def parseDocs(file_name: str ="sample_data/requests-readthedocs-io-en-latest.pdf
 
 def query(query: str, doc_model :PineconeModelManager, gemini_model : GenerativeModel):
     retrieved_docs=doc_model.query(query)
-    
+    print(query)
     prompt1 = f"Use ONLY the context provided to answer the query. Context: {retrieved_docs}\n\nQuestion: {query}\n\nAnswer:"
 
     print(" We retrieved thse docs\n")

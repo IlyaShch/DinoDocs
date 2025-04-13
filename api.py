@@ -24,24 +24,22 @@ pinecone_api_key =config['pinecone']
 
 #Parsing Text
 #This can have an argument
-# text_chunks=m.parseDocs()
+text_chunks=m.parseDocs()
 
 #Setting up model
-print("Starting Model Setup:")
 myModel=PineconeModelManager(pinecone_api_key, "us-east-1", "workshop") 
 
-print("Upserting Model!")
 #TODO: UNHARDCODE REQUESTS
-# myModel.upsert(myModel.embed_text(text_chunks),text_chunks,"requests")
+myModel.upsert(myModel.embed_text(text_chunks),text_chunks)
 
 
 configure(api_key=gemini_api_key)
 gemini_model = GenerativeModel(model_name="gemini-2.0-flash")
 
 #Example Query
-# query = "How do I POST a request?" #user query
-# response=m.query(query,myModel,gemini_model)
-# print(response.text)
+query = "How do I POST a request?" #user query
+response=m.query(query,myModel,gemini_model)
+print(response.text)
 
 app = FastAPI()
 
@@ -96,7 +94,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         f.write(content)
     
     text_chunks=m.parseDocs()
-    myModel.upsert(myModel.embed_text(text_chunks),text_chunks,file.filename)
+    myModel.upsert(myModel.embed_text(text_chunks),text_chunks)
 
 
     return {"filename": file.filename, "type": file.content_type}
