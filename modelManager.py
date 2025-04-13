@@ -47,12 +47,12 @@ class PineconeModelManager:
             for i, (embedding, chunk) in enumerate(zip(embeddings, items))
         ]
         # Upsert all at once
-        self.index.upsert(upsert_data)
+        self.index.upsert(upsert_data,namespace)
         print("data upserted :)")
 
     def query(self, query, top_k: int = 5, namespace: Optional[str] = None) -> Dict:
         """Query the index with a vector."""
-
+        # print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSHIIIITT",type(query))
         query_embedding = self.embed_text([query]) #the function expects a list of vectors
         query_embedding = query_embedding.tolist()  # Convert ndarray to list
 

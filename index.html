@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document AI Assistant</title>
+  <!-- Include React, ReactDOM, and Babel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.10/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+  
+  <!-- Adding Tailwind CSS directly -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <style>
+    .drag-active { border-color: #4F46E5; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .animate-pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    
+    function App() {
+      const [files, setFiles] = useState([]);
+      const [uploadStatus, setUploadStatus] = useState('idle');
+      const [query, setQuery] = useState('');
+      const [answer, setAnswer] = useState('');
+      const [isLoading, setIsLoading] = useState(false);
+      const [isDragActive, setIsDragActive] = useState(false);
+      const [uploadedDocs, setUploadedDocs] = useState([]);
+      const fileInputRef = useRef(null);
+      
+      // Handle file selection
+      const handleFileSelect = (e) => {
+        const selectedFiles = Array.from(e.target.files);
+        setFiles(selectedFiles);
+      };
+      
+      // Handle file drop
+      const handleDrop = (e) => {
+        e.preventDefault();
+        setIsDragActive(false);
+        
+        if (e.dataTransfer.files) {
+          const droppedFiles = Array.from(e.dataTransfer.files).filter(
+            file => file.type === 'application/pdf'
+          );
+          
+          if (droppedFiles.length > 0) {
+            setFiles(droppedFiles);
+          }
+        }
+      };
+      
+      // Handle drag events
+      const handleDragOver = (e) => {
+        e.preventDefault();
+        setIsDragActive(true);
+      };
+      
+      const handleDragLeave = () => {
+        setIsDragActive(false);
+      };
+      
+      // Upload files to the server
+const uploadFiles = async () => {
+  if (files.length === 0) return;
+  
+  setUploadStatus('uploading');
+  
+  try {
+    // Create a new FormData object
+    const formData = new FormData();
+    
+    // Just take the first file from the array
+    // and append it with the field name 'file' to match your API parameter
+    formData.append('file', files[0]);
+    
+    // Log what we're sending for debugging purposes
+    console.log('Uploading file:', files[0].name);
+    
+    // Send the request to your FastAPI endpoint
+    const response = await axios.post('http://localhost:8000/upload-pdf/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    
+    // Log the response from the server
+    console.log('Server response:', response.data);
+    
+    // Update UI state to show success
+    setUploadStatus('success');
+    
+    // Add the filename to our list of uploaded documents
+    setUploadedDocs(prev => [...prev, files[0].name]);
+    
+    // Clear the file selection
+    setFiles([]);
+    
+  } catch (error) {
+    // Handle errors
+    setUploadStatus('error');
+    console.error('Upload error:', error);
+    
+    // Log more details if available
+    if (error.response) {
+      console.error('Response data:', error.response.data);
+      console.error('Response status:', error.response.status);
+    }
+  }
+};
+      
+      // Send query to the RAG AI
+const submitQuery = async () => {
+  if (!query.trim()) return;
+  
+  setIsLoading(true);
+  setAnswer('');
+  
+  try {
+    // Log the query we're sending
+    console.log('Sending query:', query.trim());
+    
+    // Send request to your FastAPI endpoint
+    const response = await axios.post('http://localhost:8000/question-query/', {
+      query: query.trim()
+    });
+    
+    // Log the response for debugging
+    console.log('Response received:', response.data);
+    
+    // Update the UI with the answer from your API
+    // Adjust the field name if your API response has a different structure
+    setAnswer(response.data.answer || response.data.response || response.data.result || 'No answer found.');
+  } catch (error) {
+    setAnswer('Error: Could not retrieve an answer. Please try again.');
+    console.error('Query error:', error);
+    
+    // Log more details if available
+    if (error.response) {
+      console.error('Response data:', error.response.data);
+      console.error('Response status:', error.response.status);
+    }
+  } finally {
+    setIsLoading(false);
+  }
+};
+      
+      // Reset the form
+      const handleReset = () => {
+        setFiles([]);
+        setQuery('');
+        setAnswer('');
+        setUploadStatus('idle');
+      };
+      
+      // Trigger file input click
+      const openFileDialog = () => {
+        fileInputRef.current.click();
+      };
+      
+      return (
+        <div className="container mx-auto px-4 py-8 max-w-5xl">
+          <header className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-indigo-800">Document AI Assistant</h1>
+            <p className="mt-2 text-lg text-gray-600">Upload documentation and get AI-powered answers to your questions</p>
+          </header>
+          
+          <main className="space-y-8">
+            {/* Document Upload Section */}
+            <section className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">Upload Documents</h2>
+              
+              <div 
+                className={`border-2 border-dashed rounded-lg p-8 text-center ${isDragActive ? 'drag-active bg-indigo-50' : 'border-gray-300'}`}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  accept="application/pdf"
+                  multiple
+                  className="hidden"
+                />
+                
+                {files.length > 0 ? (
+                  <div className="space-y-4">
+                    <ul className="text-left max-h-40 overflow-y-auto">
+                      {files.map((file, index) => (
+                        <li key={index} className="flex items-center py-2">
+                          <svg className="w-6 h-6 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                          </svg>
+                          <span className="text-gray-700">{file.name}</span>
+                          <span className="ml-2 text-gray-500 text-sm">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                        </li>
+                      ))}
+                    </ul>
+                    
+                    <div className="flex justify-center space-x-3">
+                      <button
+                        onClick={uploadFiles}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        {uploadStatus === 'uploading' ? 'Uploading...' : 'Upload Files'}
+                      </button>
+                      <button
+                        onClick={() => setFiles([])}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    <p className="mt-2 text-gray-600">Drag and drop PDF files here, or</p>
+                    <button
+                      onClick={openFileDialog}
+                      className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      Browse Files
+                    </button>
+                    <p className="mt-1 text-sm text-gray-500">PDF files only</p>
+                  </div>
+                )}
+              </div>
+              
+              {uploadStatus === 'success' && (
+                <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md">
+                  Documents uploaded successfully!
+                </div>
+              )}
+              
+              {uploadStatus === 'error' && (
+                <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                  Error uploading documents. Please try again.
+                </div>
+              )}
+              
+              {/* Uploaded Documents List */}
+              {uploadedDocs.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">Uploaded Documents</h3>
+                  <ul className="text-left text-sm text-gray-600 space-y-1">
+                    {uploadedDocs.map((doc, index) => (
+                      <li key={index} className="flex items-center">
+                        <svg className="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        {doc}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+            
+            {/* Query Section */}
+            <section className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">Ask a Question</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="query" className="block text-sm font-medium text-gray-700 mb-1">
+                    Your question:
+                  </label>
+                  <textarea
+                    id="query"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    rows="3"
+                    placeholder="Enter your question about the uploaded documents..."
+                  ></textarea>
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={submitQuery}
+                    disabled={isLoading}
+                    className={`px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {isLoading ? 'Searching...' : 'Ask AI'}
+                  </button>
+                  <button
+                    onClick={handleReset}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+              
+              {/* Answer Section */}
+              {(isLoading || answer) && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">AI Response</h3>
+                  
+                  {isLoading ? (
+                    <div className="p-4 border border-gray-200 rounded-md bg-gray-50">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-indigo-600 rounded-full animate-pulse"></div>
+                        <div className="w-3 h-3 bg-indigo-600 rounded-full animate-pulse delay-150"></div>
+                        <div className="w-3 h-3 bg-indigo-600 rounded-full animate-pulse delay-300"></div>
+                        <span className="text-gray-500">Searching documents...</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 border border-gray-200 rounded-md bg-gray-50">
+                      <p className="text-gray-800 whitespace-pre-line">{answer}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+          </main>
+          
+          <footer className="mt-12 text-center text-gray-500 text-sm">
+            <p>© 2025 Document AI Assistant. All rights reserved.</p>
+          </footer>
+        </div>
+      );
+    }
+    
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
