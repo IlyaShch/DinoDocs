@@ -4,3 +4,4 @@
 /sample_data/california_housing_train.csv
 /sample_data/california_housing_test.csv
 /sample_data/anscombe.json
+__pycache__
