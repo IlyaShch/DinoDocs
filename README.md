@@ -1,4 +1,4 @@
-# 🧠 RAG-Based Code Documentation Assistant
+# 🦕 RAG-Based Code Documentation Assistant
 
 This project is a full-stack **Retrieval-Augmented Generation (RAG)** application designed to parse and understand technical code documentation from PDF files and answer natural language questions about them. It uses **FastAPI**, **PineconeDB**, **minishlab/potion-base-8M**, and **Gemini LLM**, with a **React frontend**.
 
